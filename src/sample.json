@@ -1,0 +1,34 @@
+ {
+  "current": {
+    "interval": Number(900),
+    "temperature_2m": Number(61.5),
+    "time": String("2025-06-17T09:00"),
+    "weather_code": Number(3)
+  },
+  "current_units": {
+    "interval": String("seconds"),
+    "temperature_2m": String("°F"),
+    "time": String("iso8601"),
+    "weather_code": String("wmo code")
+  },
+  "daily": {
+    "temperature_2m_max": Array [Number(72.4)
+    ],
+    "temperature_2m_min": Array [Number(58.0)
+    ],
+    "time": Array [String("2025-06-17")
+    ]
+  },
+  "daily_units": {
+    "temperature_2m_max": String("°F"),
+    "temperature_2m_min": String("°F"),
+    "time": String("iso8601")
+  },
+  "elevation": Number(1599.0),
+  "generationtime_ms": Number(0.05996227264404297),
+  "latitude": Number(39.746895),
+  "longitude": Number(-104.987076),
+  "timezone": String("America/Denver"),
+  "timezone_abbreviation": String("GMT-6"),
+  "utc_offset_seconds": Number(-21600)
+}
