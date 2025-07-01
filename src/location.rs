@@ -1,10 +1,14 @@
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
 pub struct Location {
     pub latitude: f32,
     pub longitude: f32,
+    pub timezone: String
 }
 
 impl Location {
-  pub fn new(lat: f32, long: f32) -> Result<Self, &'static str> {
+  pub fn new(lat: f32, long: f32, timezone: String) -> Result<Self, &'static str> {
       if long < -90.0 && long > 90.0 {
           Err("Invalid longitude provided")
       } else if lat <= -180.0 && lat >= 180.0 {
@@ -13,6 +17,7 @@ impl Location {
           Ok(Location {
               latitude: lat,
               longitude: long,
+              timezone: timezone
           })
       }
   }

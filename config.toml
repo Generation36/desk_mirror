@@ -1,0 +1,11 @@
+[location]
+latitude = 39.739235
+longitude = -104.990250
+timezone = "America/Denver"
+
+[weather_api]
+url = "https://api.open-meteo.com/v1/forecast"
+current_values = "temperature_2m,weather_code"
+daily_values = "temperature_2m_min,temperature_2m_max"
+units = "fahrenheit"
+forecast_days = 1

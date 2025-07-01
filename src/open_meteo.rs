@@ -1,39 +1,35 @@
-use crate::location::Location;
-use std::time::Duration;
-use reqwest::{blocking::Client, StatusCode};
+use std::{collections::HashMap, time::Duration, error::Error};
+use reqwest::{blocking::Client};
 use serde::{Serialize, Deserialize};
+use crate::config::ApiConfig;
+use crate::location::Location;
 
-pub fn get_weather_data(loc: &Location) -> String {
+pub fn build_request_params(loc: &Location, config: &ApiConfig) -> HashMap<&'static str, String> {
+  let mut params = HashMap::new();
+  params.insert("latitude", loc.latitude.to_string());
+  params.insert("longitude", loc.longitude.to_string());
+  params.insert("timezone", loc.timezone.to_string());
+  params.insert("daily", config.daily_values.clone());
+  params.insert("current", config.current_values.clone());
+  params.insert("forecast_days", config.forecast_days.to_string());
+  params.insert("temperature_unit", config.units.clone());
+
+  params
+}
+
+pub fn get_weather_data(loc: &Location, config: &ApiConfig) -> Result<WeatherData, Box< dyn Error>> {
   println!("Fetching weather data for {}", loc.display());
-  let weather_api_url = "https://api.open-meteo.com/v1/forecast";
-  let params = [
-    ("latitude", loc.latitude.to_string()),
-    ("longitude", loc.longitude.to_string()), 
-    ("daily", "temperature_2m_min,temperature_2m_max".to_string()),
-    ("current", "temperature_2m,weather_code".to_string()),
-    ("timezone", "America/Denver".to_string()),
-    ("forecast_days", "1".to_string()),
-    ("temperature_unit", "fahrenheit".to_string())
-  ];
+  let params = build_request_params(loc, config);
   
   let response = Client::new()
-    .get(weather_api_url)
+    .get(&config.url)
     .query(&params)
     .timeout(Duration::from_secs(5))
     .send()
     .expect("Unable to fetch weather data");
 
-  // if response.status() != StatusCode::is_success(response) {
-
-  // }
-
-  println!("Status: {}", &response.status());
-  // println!("Headers:\n{:#?}", &response.headers());
-
-  let data = &response.text().unwrap();
-  // println!("Body:\n{:?}", data);
-    
-  data.clone()
+  let data = response.text()?;
+  parse_weather_data(&data)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,7 +41,7 @@ pub struct WeatherData {
   weather_code: u64,
 }
 
-pub fn parse_weather_data(weather_data: &String) -> WeatherData {
+pub fn parse_weather_data(weather_data: &String) -> Result<WeatherData, Box< dyn Error>> {
 
   let data: serde_json::Value = serde_json::from_str(&weather_data).unwrap();
   println!("Weather Data: {:?}", data);
@@ -55,10 +51,10 @@ pub fn parse_weather_data(weather_data: &String) -> WeatherData {
   let daily_max_temp = daily_temps["temperature_2m_max"][0].as_f64().unwrap();
   let daily_min_temp = daily_temps["temperature_2m_min"][0].as_f64().unwrap();
   
-  WeatherData { 
+  Ok(WeatherData { 
     current_temp: current_temperature, 
     daily_max_temp: daily_max_temp, 
     daily_min_temp: daily_min_temp, 
     weather_code: weather_code 
-  }
+  })
 }
