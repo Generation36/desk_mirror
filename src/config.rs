@@ -1,6 +1,8 @@
-use serde::Deserialize;
-use std::{fs, path::Path, fmt};
 use crate::location::Location;
+use serde::Deserialize;
+use std::{collections::HashMap, fs, io, path::Path};
+use thiserror::Error;
+use toml::Value;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -14,37 +16,29 @@ pub struct ApiConfig {
     pub current_values: String,
     pub daily_values: String,
     pub units: String,
-    pub forecast_days: u8,
+    pub forecast_days: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum ConfigError {
-    ReadError {
-        path: String,
-        source: std::io::Error,
-    },
-    ParseError(toml::de::Error),
+    #[error("Failed to read config file")]
+    ReadError(#[from] io::Error),
+
+    #[error("Failed to parse TOML: {0}")]
+    ParseError(#[from] toml::de::Error),
+
+    #[error("Missing values found ")]
+    MissingValueError,
 }
 
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ConfigError::ReadError { path, source } => {
-                write!(f, "Failed to read config file at '{}': {}", path, source)
-            }
-            ConfigError::ParseError(e) => write!(f, "Failed to parse TOML: {}", e),
-        }
-    }
-}
+pub fn read_config<P: AsRef<Path>>(path: P) -> Result<HashMap<String, Value>, ConfigError> {
+    let content = fs::read_to_string(path)?;
+    let value: Value = toml::from_str(&content)?;
 
-pub fn load_config<P: AsRef<Path>>(path: P) -> Result<Config, ConfigError> {
-    let file_content = fs::read_to_string(&path)
-                                    .map_err(|e| ConfigError::ReadError { 
-                                        path: path.as_ref().display().to_string(), 
-                                        source: e,
-                                    })?;
+    let table = match value {
+        Value::Table(table) => table,
+        _ => return Err(ConfigError::MissingValueError),
+    };
 
-    let config = toml::from_str(&file_content).map_err(ConfigError::ParseError)?;
-
-    Ok(config)
+    Ok(table.into_iter().collect())
 }
